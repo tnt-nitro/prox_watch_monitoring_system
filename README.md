@@ -7,6 +7,7 @@
 ✅ **MVP v0.1.0** - Core implementation complete
 ✅ **v0.2.0** - External Watcher (Phase 1) complete
 ✅ **v0.3.0** - Hardware GPIO (Phase 1.5) complete
+✅ **v0.4.0** - Persistenz & Cooldown (Phase 2) complete
 
 ## Was ist es / was nicht
 
