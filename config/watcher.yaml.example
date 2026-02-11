@@ -1,0 +1,33 @@
+# Watcher-Konfiguration (Beispiel)
+# Diese Datei ist repo-safe (keine realen Daten)
+
+watcher:
+  interval_seconds: 30
+  cooldown_seconds: 600  # Cooldown in Sekunden (Default: 600 = 10 Minuten)
+
+target:
+  mode: "ping+https"        # ping | https | ping+https
+  host: "PLACEHOLDER"       # Lokal ersetzen (keine IP im Repo!)
+  port: 8006
+  timeout_seconds: 5
+
+thresholds:
+  warn: 3
+  crit: 10
+
+push:
+  enabled: true
+  adapter: "ntfy"
+  topics:
+    warn: "prox-watch-warn"
+    crit: "prox-watch-crit"
+
+gpio:
+  enabled: false
+  led_pin: 17
+  beeper_pin: 27
+  beeper_day_only: true
+
+security:
+  block_ip_literals: true
+  require_manual_powercycle: true

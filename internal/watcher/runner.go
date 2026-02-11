@@ -1,0 +1,213 @@
+package watcher
+
+import (
+	"context"
+	"prox-watch/internal/rules"
+	"time"
+)
+
+// Runner orchestriert den Watcher-Prozess.
+// Phase 2: Mit Persistenz und Cooldown.
+// Single-Thread, 30s Intervall, Health-Check → Counter → Severity → Push → GPIO
+// Siehe docs/19_watcher_runner.md für vollständige Spezifikation.
+type Runner interface {
+	Run(ctx context.Context) error
+	Stop() error
+	Wait() error
+}
+
+// runner ist die Implementierung des Runner-Interfaces.
+type runner struct {
+	health        HealthChecker
+	counter       Counter
+	push          *PushService
+	gpio          GPIO
+	state         *State
+	store         StateStore
+	interval      time.Duration
+	warnThreshold int
+	critThreshold int
+	cooldownSecs  int
+
+	ctx    context.Context
+	cancel context.CancelFunc
+	done   chan struct{}
+}
+
+// RunnerConfig enthält die Konfiguration für den Runner.
+type RunnerConfig struct {
+	Health        HealthChecker
+	Counter       Counter
+	Push          *PushService
+	GPIO          GPIO
+	Store         StateStore
+	Interval      time.Duration
+	WarnThreshold int
+	CritThreshold int
+	CooldownSecs  int // Cooldown in Sekunden (Default: 600 = 10 Minuten)
+}
+
+// NewRunner erstellt einen neuen Runner.
+// Phase 2: Lädt persistenten State beim Start.
+func NewRunner(config RunnerConfig) (Runner, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// State mit Thresholds erstellen
+	state := NewStateWithThresholds(config.WarnThreshold, config.CritThreshold)
+
+	// Cooldown-Default: 600 Sekunden (10 Minuten)
+	cooldownSecs := config.CooldownSecs
+	if cooldownSecs <= 0 {
+		cooldownSecs = 600
+	}
+
+	runner := &runner{
+		health:        config.Health,
+		counter:       config.Counter,
+		push:          config.Push,
+		gpio:          config.GPIO,
+		state:         state,
+		store:         config.Store,
+		interval:      config.Interval,
+		warnThreshold: config.WarnThreshold,
+		critThreshold: config.CritThreshold,
+		cooldownSecs:  cooldownSecs,
+		ctx:           ctx,
+		cancel:        cancel,
+		done:          make(chan struct{}),
+	}
+
+	// Phase 2: Lade persistenten State beim Start
+	if config.Store != nil {
+		persisted, err := config.Store.Load()
+		if err != nil {
+			// Fehler beim Laden: Weiter mit Default-State (kein Panic)
+			// Logging optional, aber nicht blockierend
+		} else {
+			// State aus Persistenz wiederherstellen
+			state.FailCount = persisted.FailCount
+			state.CurrentSeverity = persisted.CurrentSeverity
+			// LastEscalation wird in state.LastEscalation gespeichert (später)
+		}
+	}
+
+	return runner, nil
+}
+
+// Run startet den Event-Loop.
+// Phase 2: Mit Persistenz und Cooldown.
+func (r *runner) Run(ctx context.Context) error {
+	defer close(r.done)
+
+	// Erstelle Ticker für Intervall
+	ticker := time.NewTicker(r.interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			// Context-Cancellation (extern)
+			return ctx.Err()
+
+		case <-r.ctx.Done():
+			// Interne Cancellation (Stop())
+			return nil
+
+		case <-ticker.C:
+			// Health-Check ausführen
+			result, err := r.health.Check(ctx)
+			if err != nil {
+				// Health-Check-Fehler: Weiter mit nächstem Intervall
+				// Kein Stopp, kein Retry
+				continue
+			}
+
+			// Counter & Severity
+			var newSeverity rules.Severity
+			var failCountChanged, severityChanged bool
+
+			if result.Success {
+				// Erfolg: Counter zurücksetzen
+				oldFailCount := r.state.FailCount
+				r.counter.Reset()
+				r.state.FailCount = 0
+				newSeverity = rules.SeverityInfo
+				failCountChanged = (oldFailCount != 0)
+			} else {
+				// Fehler: Counter erhöhen
+				r.counter.Increment()
+				failCount := r.counter.GetCount()
+				r.state.FailCount = failCount
+				newSeverity = EvaluateSeverity(failCount, r.warnThreshold, r.critThreshold)
+				failCountChanged = true
+			}
+
+			severityChanged = (newSeverity != r.state.CurrentSeverity)
+
+			// Push nur bei Eskalation (newSeverity > currentSeverity) UND Cooldown abgelaufen
+			shouldPush := ShouldPush(r.state.CurrentSeverity, newSeverity)
+			now := time.Now()
+
+			// Cooldown-Prüfung: Lade LastEscalation aus Store (wenn vorhanden)
+			var lastEscalation time.Time
+			if r.store != nil {
+				persisted, err := r.store.Load()
+				if err == nil {
+					lastEscalation = persisted.LastEscalation
+				}
+			}
+
+			cooldownExpired := true
+			if shouldPush && !lastEscalation.IsZero() {
+				cooldownDuration := time.Duration(r.cooldownSecs) * time.Second
+				cooldownExpired = now.Sub(lastEscalation) >= cooldownDuration
+			}
+
+			if shouldPush && cooldownExpired {
+				// Push senden (nicht blockierend, Fehler werden ignoriert)
+				_ = r.push.SendIfEscalation(ctx, r.state.CurrentSeverity, newSeverity)
+
+				// LastEscalation aktualisieren
+				lastEscalation = now
+			}
+
+			// GPIO Update (nur bei Severity-Änderung)
+			if severityChanged {
+				// LED setzen
+				_ = r.gpio.SetLED(newSeverity)
+
+				// Beep nur bei Eskalation zu CRIT
+				if newSeverity == rules.SeverityCrit && shouldPush && cooldownExpired {
+					_ = r.gpio.Beep()
+				}
+			}
+
+			// State aktualisieren
+			r.state.CurrentSeverity = newSeverity
+
+			// Phase 2: Save nur bei Änderungen (FailCount, Severity, LastEscalation)
+			if r.store != nil && (failCountChanged || severityChanged || shouldPush) {
+				persisted := PersistedState{
+					FailCount:       r.state.FailCount,
+					CurrentSeverity:  r.state.CurrentSeverity,
+					LastEscalation:   lastEscalation,
+				}
+				// Save-Fehler werden ignoriert (kein Panic, kein Blocking)
+				_ = r.store.Save(persisted)
+			}
+		}
+	}
+}
+
+// Stop stoppt den Runner (Graceful Shutdown).
+func (r *runner) Stop() error {
+	// Context-Cancellation
+	r.cancel()
+	return nil
+}
+
+// Wait wartet auf das Ende des Runners.
+func (r *runner) Wait() error {
+	<-r.done
+	return nil
+}

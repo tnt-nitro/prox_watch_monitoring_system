@@ -4,7 +4,9 @@
 
 ## Status
 
-✅ **MVP v0.1** - Core implementation complete
+✅ **MVP v0.1.0** - Core implementation complete
+✅ **v0.2.0** - External Watcher (Phase 1) complete
+✅ **v0.3.0** - Hardware GPIO (Phase 1.5) complete
 
 ## Was ist es / was nicht
 
@@ -137,10 +139,32 @@ Siehe [SECURITY.md](SECURITY.md) für Details.
 - Tests (Unit + Komponenten)
 - Docs (minimal)
 
+### ✅ Phase 1.0: Externer Wächter (Watcher) - v0.2.0
+- Health-Check (Ping + HTTPS)
+- Counter (In-Memory)
+- Severity-Evaluierung
+- Push-Benachrichtigungen
+- GPIO-Interface (NoOp)
+- Runner (Event-Loop)
+- Integration-Tests
+
+### ✅ Phase 1.5: Hardware GPIO - v0.3.0
+- Raspberry GPIO (periph.io Integration)
+- LED-Statusanzeige (INFO/WARN/CRIT)
+- Beeper mit Eskalations-Trigger, Zeitfenster, Maximaldauer
+- Atomic Concurrency-Schutz
+- Build-Tags (raspberry / default mock)
+- Vollständige Hardware-Testabdeckung (MockPin)
+
+Siehe [cmd/watcher/README.md](cmd/watcher/README.md) und [RELEASE_NOTES_v0.3.0.md](RELEASE_NOTES_v0.3.0.md) für Details.
+
 ### ⏳ Phase 2: Erweiterungen
 - Journal Reader (systemd)
 - Pattern Registry (YAML)
-- Externer Wächter (Raspberry)
+- Hardware-GPIO (Raspberry Pi)
+- SQLite-Persistenz (Watcher)
+- Cooldown-Mechanismus
+- Power-Cycle (mit manueller Freigabe)
 
 ### ⏳ Phase 3: Observability (optional)
 - Zabbix-Integration
