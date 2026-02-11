@@ -1,0 +1,47 @@
+[Unit]
+Description=Prox Watch Monitoring System
+Documentation=https://github.com/.../prox-watch
+After=network.target systemd-journald.service
+Wants=systemd-journald.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/prox-watch
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+
+# User & Group
+User=prox-watch
+Group=prox-watch
+
+# Working Directory
+WorkingDirectory=/var/lib/prox-watch
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/prox-watch
+ReadOnlyPaths=/var/log/journal
+
+# Capabilities
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Network
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+
+# Process
+LimitNOFILE=1024
+LimitNPROC=64
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=prox-watch
+
+[Install]
+WantedBy=multi-user.target

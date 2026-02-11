@@ -1,0 +1,44 @@
+# Example configuration file
+# Copy to /var/lib/prox-watch/config.yaml and customize
+
+system:
+  timezone: "UTC"
+  run_mode: "daemon"
+
+logging:
+  level: "info"
+
+journal:
+  source: "systemd"
+  read_mode: "follow"
+
+patterns:
+  registry_path: "LOCAL_ONLY"
+
+rules:
+  info:
+    threshold: 1
+    window_minutes: 0
+  warn:
+    threshold: 3
+    window_minutes: 10
+  crit:
+    threshold: 10
+    window_minutes: 15
+
+push:
+  enabled: true
+  adapter: "ntfy"
+  topics:
+    info: "prox-watch-info"
+    warn: "prox-watch-warn"
+    crit: "prox-watch-crit"
+
+state:
+  backend: "sqlite"
+  path: "LOCAL_ONLY"
+
+security:
+  block_repo_paths: true
+  block_ip_literals: true
+  require_local_config: true
