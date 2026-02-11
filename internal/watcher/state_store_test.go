@@ -40,6 +40,13 @@ func TestStateStore_InitialLoadReturnsDefault(t *testing.T) {
 	if !state.LastEscalation.Equal(time.Unix(0, 0)) {
 		t.Errorf("expected LastEscalation=Unix(0), got %v", state.LastEscalation)
 	}
+	// Phase 3: PowerAttempts und LastPowerAttempt
+	if state.PowerAttempts != 0 {
+		t.Errorf("expected PowerAttempts=0, got %d", state.PowerAttempts)
+	}
+	if !state.LastPowerAttempt.Equal(time.Unix(0, 0)) {
+		t.Errorf("expected LastPowerAttempt=Unix(0), got %v", state.LastPowerAttempt)
+	}
 }
 
 func TestStateStore_SaveAndLoadRoundTrip(t *testing.T) {
@@ -54,9 +61,11 @@ func TestStateStore_SaveAndLoadRoundTrip(t *testing.T) {
 	now := time.Now().Truncate(time.Second)
 
 	orig := PersistedState{
-		FailCount:       5,
-		CurrentSeverity: rules.SeverityWarn,
-		LastEscalation:  now,
+		FailCount:        5,
+		CurrentSeverity:  rules.SeverityWarn,
+		LastEscalation:   now,
+		PowerAttempts:    1,
+		LastPowerAttempt: now,
 	}
 
 	if err := storeIface.Save(orig); err != nil {
@@ -77,6 +86,13 @@ func TestStateStore_SaveAndLoadRoundTrip(t *testing.T) {
 	if !loaded.LastEscalation.Equal(orig.LastEscalation) {
 		t.Errorf("expected LastEscalation=%v, got %v", orig.LastEscalation, loaded.LastEscalation)
 	}
+	// Phase 3: PowerAttempts und LastPowerAttempt
+	if loaded.PowerAttempts != orig.PowerAttempts {
+		t.Errorf("expected PowerAttempts=%d, got %d", orig.PowerAttempts, loaded.PowerAttempts)
+	}
+	if !loaded.LastPowerAttempt.Equal(orig.LastPowerAttempt) {
+		t.Errorf("expected LastPowerAttempt=%v, got %v", orig.LastPowerAttempt, loaded.LastPowerAttempt)
+	}
 }
 
 func TestStateStore_SaveMultipleOverwrites(t *testing.T) {
@@ -89,14 +105,18 @@ func TestStateStore_SaveMultipleOverwrites(t *testing.T) {
 	defer storeIface.Close()
 
 	first := PersistedState{
-		FailCount:       1,
-		CurrentSeverity: rules.SeverityWarn,
-		LastEscalation:  time.Unix(1000, 0),
+		FailCount:        1,
+		CurrentSeverity:  rules.SeverityWarn,
+		LastEscalation:   time.Unix(1000, 0),
+		PowerAttempts:    0,
+		LastPowerAttempt: time.Unix(0, 0),
 	}
 	second := PersistedState{
-		FailCount:       10,
-		CurrentSeverity: rules.SeverityCrit,
-		LastEscalation:  time.Unix(2000, 0),
+		FailCount:        10,
+		CurrentSeverity:  rules.SeverityCrit,
+		LastEscalation:   time.Unix(2000, 0),
+		PowerAttempts:    1,
+		LastPowerAttempt: time.Unix(2000, 0),
 	}
 
 	if err := storeIface.Save(first); err != nil {

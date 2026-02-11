@@ -13,9 +13,9 @@ type MockPin struct {
 	mu        sync.Mutex
 }
 
-// newMockPin erstellt einen neuen MockPin.
+// NewMockPin erstellt einen neuen MockPin.
 // Phase 1.5: Wird für Tests verwendet, später durch echte periph.io Pins ersetzt.
-func newMockPin(pinNumber int) (Pin, error) {
+func NewMockPin(pinNumber int) (Pin, error) {
 	if pinNumber < 0 {
 		return nil, fmt.Errorf("invalid pin number: %d", pinNumber)
 	}

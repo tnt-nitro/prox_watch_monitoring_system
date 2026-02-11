@@ -8,6 +8,7 @@
 ✅ **v0.2.0** - External Watcher (Phase 1) complete
 ✅ **v0.3.0** - Hardware GPIO (Phase 1.5) complete
 ✅ **v0.4.0** - Persistenz & Cooldown (Phase 2) complete
+✅ **v0.5.0** - Gesicherter Power-Cycle (Phase 3) complete ⚡🔒
 
 ## Was ist es / was nicht
 
@@ -159,13 +160,21 @@ Siehe [SECURITY.md](SECURITY.md) für Details.
 
 Siehe [cmd/watcher/README.md](cmd/watcher/README.md) und [RELEASE_NOTES_v0.3.0.md](RELEASE_NOTES_v0.3.0.md) für Details.
 
-### ⏳ Phase 2: Erweiterungen
-- Journal Reader (systemd)
-- Pattern Registry (YAML)
-- Hardware-GPIO (Raspberry Pi)
-- SQLite-Persistenz (Watcher)
-- Cooldown-Mechanismus
-- Power-Cycle (mit manueller Freigabe)
+### ✅ Phase 2: Persistenz & Cooldown - v0.4.0
+- SQLite-Persistenz (Watcher-State)
+- Cooldown-Mechanismus (Push-Spam-Schutz)
+- Restart-Sicherheit
+
+### ✅ Phase 3: Gesicherter Power-Cycle - v0.5.0
+- **⚠️ KRITISCH:** Power-Cycle-Funktionalität mit mehrschichtigen Sicherheitsmechanismen
+- Severity-Edge-Trigger (verhindert CRIT-Sturm)
+- ARM-Datei-Mechanismus (manuelle Freigabe)
+- GPIO-Relais-Steuerung (NO/NC-kompatibel)
+- Max Attempts & Retry-Cooldown
+- Vollständige Integrationstests
+- **Dokumentation:** [docs/24_powercycle_safety.md](docs/24_powercycle_safety.md)
+
+**⚠️ WARNUNG:** Power-Cycle kann zu Datenverlust führen. Nur für absolute Notfälle. Standardmäßig deaktiviert.
 
 ### ⏳ Phase 3: Observability (optional)
 - Zabbix-Integration

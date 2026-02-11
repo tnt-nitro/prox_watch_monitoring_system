@@ -39,25 +39,25 @@ func NewRaspberryGPIO(cfg GPIOConfig) (GPIO, error) {
 	// pin.Low() - Setzt Pin initial auf LOW
 
 	// Platzhalter: MockPins für Tests (später durch echte periph.io Pins ersetzt)
-	greenPin, err := newMockPin(cfg.LEDPinGreen)
+			greenPin, err := NewMockPin(cfg.LEDPinGreen)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize green pin: %w", err)
 	}
 
-	yellowPin, err := newMockPin(cfg.LEDPinYellow)
+			yellowPin, err := NewMockPin(cfg.LEDPinYellow)
 	if err != nil {
 		greenPin.Close()
 		return nil, fmt.Errorf("failed to initialize yellow pin: %w", err)
 	}
 
-	redPin, err := newMockPin(cfg.LEDPinRed)
+			redPin, err := NewMockPin(cfg.LEDPinRed)
 	if err != nil {
 		greenPin.Close()
 		yellowPin.Close()
 		return nil, fmt.Errorf("failed to initialize red pin: %w", err)
 	}
 
-	beeperPin, err := newMockPin(cfg.BeeperPin)
+			beeperPin, err := NewMockPin(cfg.BeeperPin)
 	if err != nil {
 		greenPin.Close()
 		yellowPin.Close()

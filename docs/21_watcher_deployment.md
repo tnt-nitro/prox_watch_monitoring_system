@@ -171,14 +171,39 @@ sudo systemctl restart prox-watch-watcher
 sudo systemctl stop prox-watch-watcher
 ```
 
-## GPIO-Konfiguration (Phase 2)
+## GPIO-Konfiguration
 
-**Phase 1: GPIO ist deaktiviert (NoOp)**
+### LED & Beeper (Phase 1.5)
 
-Für Phase 2 (Hardware-GPIO):
+**Standard: GPIO ist deaktiviert (NoOp)**
+
+Für Hardware-GPIO:
 1. GPIO aktivieren: `gpio.enabled: true`
 2. GPIO-Pins konfigurieren: `led_pin`, `beeper_pin`
-3. Hardware-GPIO-Implementierung installieren (später)
+3. Hardware-GPIO-Implementierung installieren (Build mit `-tags raspberry`)
+
+Siehe [docs/22_gpio_hardware_architecture.md](docs/22_gpio_hardware_architecture.md) für Details.
+
+### Power-Cycle (Phase 3)
+
+**⚠️ KRITISCH: Power-Cycle steuert physische Hardware und kann zu Datenverlust führen.**
+
+**Standard: Power-Cycle ist deaktiviert**
+
+Für Power-Cycle:
+1. **Lesen Sie zuerst:** [docs/24_powercycle_safety.md](docs/24_powercycle_safety.md)
+2. Hardware-Verdrahtung prüfen (NO/NC-Relais)
+3. `powercycle.enabled: true` setzen
+4. `powercycle.relay_mode` korrekt konfigurieren (Pflicht!)
+5. ARM-Datei erstellen: `sudo touch /var/lib/prox-watch/arm_powercycle`
+
+**Kill-Switch (Schnellste Deaktivierung):**
+```yaml
+powercycle:
+  enabled: false
+```
+
+Nach Änderung: `sudo systemctl restart prox-watch-watcher`
 
 ## Troubleshooting
 

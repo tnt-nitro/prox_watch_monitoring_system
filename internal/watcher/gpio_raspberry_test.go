@@ -319,9 +319,9 @@ func TestRaspberryGPIO_LEDSwitch(t *testing.T) {
 
 func TestMockPin_HighLow(t *testing.T) {
 	// MockPin Tests
-	pin, err := newMockPin(17)
-	if err != nil {
-		t.Fatalf("newMockPin() failed: %v", err)
+		pin, err := NewMockPin(17)
+		if err != nil {
+			t.Fatalf("NewMockPin() failed: %v", err)
 	}
 	defer pin.Close()
 
@@ -350,7 +350,7 @@ func TestMockPin_HighLow(t *testing.T) {
 
 func TestMockPin_InvalidPin(t *testing.T) {
 	// Invalid Pin Number
-	_, err := newMockPin(-1)
+		_, err := NewMockPin(-1)
 	if err == nil {
 		t.Error("Expected error for invalid pin number, got nil")
 	}

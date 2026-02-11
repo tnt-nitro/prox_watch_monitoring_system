@@ -17,17 +17,20 @@ type Runner interface {
 }
 
 // runner ist die Implementierung des Runner-Interfaces.
+// Phase 3: Erweitert um PowerCycler.
 type runner struct {
 	health        HealthChecker
 	counter       Counter
 	push          *PushService
 	gpio          GPIO
+	powerCycler   PowerCycler // Phase 3: Power-Cycle-Interface
 	state         *State
 	store         StateStore
 	interval      time.Duration
 	warnThreshold int
 	critThreshold int
 	cooldownSecs  int
+	powerCycleCfg PowerCycleConfig // Phase 3: Power-Cycle-Konfiguration
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -35,16 +38,19 @@ type runner struct {
 }
 
 // RunnerConfig enthält die Konfiguration für den Runner.
+// Phase 3: Erweitert um PowerCycler und PowerCycleConfig.
 type RunnerConfig struct {
 	Health        HealthChecker
 	Counter       Counter
 	Push          *PushService
 	GPIO          GPIO
+	PowerCycler   PowerCycler      // Phase 3: Power-Cycle-Interface (optional)
 	Store         StateStore
 	Interval      time.Duration
 	WarnThreshold int
 	CritThreshold int
-	CooldownSecs  int // Cooldown in Sekunden (Default: 600 = 10 Minuten)
+	CooldownSecs  int              // Cooldown in Sekunden (Default: 600 = 10 Minuten)
+	PowerCycleCfg PowerCycleConfig // Phase 3: Power-Cycle-Konfiguration
 }
 
 // NewRunner erstellt einen neuen Runner.
@@ -66,12 +72,14 @@ func NewRunner(config RunnerConfig) (Runner, error) {
 		counter:       config.Counter,
 		push:          config.Push,
 		gpio:          config.GPIO,
+		powerCycler:   config.PowerCycler, // Phase 3: Power-Cycle-Interface
 		state:         state,
 		store:         config.Store,
 		interval:      config.Interval,
 		warnThreshold: config.WarnThreshold,
 		critThreshold: config.CritThreshold,
 		cooldownSecs:  cooldownSecs,
+		powerCycleCfg: config.PowerCycleCfg, // Phase 3: Power-Cycle-Konfiguration
 		ctx:           ctx,
 		cancel:        cancel,
 		done:          make(chan struct{}),
@@ -183,17 +191,40 @@ func (r *runner) Run(ctx context.Context) error {
 			}
 
 			// State aktualisieren
+			previousSeverity := r.state.CurrentSeverity
 			r.state.CurrentSeverity = newSeverity
 
-			// Phase 2: Save nur bei Änderungen (FailCount, Severity, LastEscalation)
-			if r.store != nil && (failCountChanged || severityChanged || shouldPush) {
-				persisted := PersistedState{
-					FailCount:       r.state.FailCount,
-					CurrentSeverity:  r.state.CurrentSeverity,
-					LastEscalation:   lastEscalation,
+			// Phase 3: Power-Cycle prüfen (nur bei CRIT-Edge-Trigger)
+			// Edge-Trigger: Nur wenn Severity von < CRIT → CRIT wechselt
+			if newSeverity == rules.SeverityCrit &&
+				previousSeverity < rules.SeverityCrit &&
+				r.powerCycler != nil &&
+				r.store != nil {
+				// Lade State für Power-Cycle-Prüfung
+				persisted, err := r.store.Load()
+				if err == nil {
+					// Prüfe, ob Power-Cycle erlaubt ist (ARM, Max Attempts, Retry-Cooldown)
+					if AllowedPowerCycle(newSeverity, r.powerCycleCfg, persisted) {
+						// Power-Cycle-Versuch (Fehler werden ignoriert, kein Panic)
+						_ = r.powerCycler.Attempt(ctx)
+						// State wird in Attempt() gespeichert
+					}
 				}
-				// Save-Fehler werden ignoriert (kein Panic, kein Blocking)
-				_ = r.store.Save(persisted)
+			}
+
+			// Phase 2: Save nur bei Änderungen (FailCount, Severity, LastEscalation)
+			// Phase 3: PowerAttempts werden in Attempt() gespeichert, nicht hier
+			if r.store != nil && (failCountChanged || severityChanged || shouldPush) {
+				// Lade aktuellen State (inkl. PowerAttempts)
+				persisted, err := r.store.Load()
+				if err == nil {
+					persisted.FailCount = r.state.FailCount
+					persisted.CurrentSeverity = r.state.CurrentSeverity
+					persisted.LastEscalation = lastEscalation
+					// PowerAttempts und LastPowerAttempt bleiben unverändert (werden nur in Attempt() gesetzt)
+					// Save-Fehler werden ignoriert (kein Panic, kein Blocking)
+					_ = r.store.Save(persisted)
+				}
 			}
 		}
 	}
