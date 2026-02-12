@@ -26,7 +26,7 @@ sudo apt install golang-go
 
 # Repository klonen
 git clone <repository-url>
-cd prox-watch-monitoring-system
+cd prox_watch_monitoring_system
 
 # Build
 go build -o prox-watch-watcher ./cmd/watcher

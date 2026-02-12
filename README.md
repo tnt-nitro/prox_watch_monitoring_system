@@ -30,7 +30,7 @@
 
 ## Schnellstart
 
-### Installation
+### Core (Proxmox-Host)
 
 1. **Konfiguration initialisieren:**
    ```bash
@@ -51,11 +51,86 @@
    sudo systemctl status prox-watch.service
    ```
 
+### Watcher (Raspberry Pi)
+
+**Voraussetzungen:**
+- Raspberry Pi 3B+ oder neuer (empfohlen: Pi 4 oder Pi 5)
+- **Raspberry Pi OS (64-bit) Lite** installiert
+- Netzwerkverbindung zum Proxmox-Host
+
+**Installation von GitHub:**
+
+```bash
+# Standard-Installation (ohne Hardware-GPIO)
+curl -fsSL https://raw.githubusercontent.com/tnt-nitro/prox_watch_monitoring_system/main/installer/install_watcher.sh | sudo bash
+
+# Mit Hardware-GPIO-Unterstützung
+ENABLE_GPIO=1 curl -fsSL https://raw.githubusercontent.com/tnt-nitro/prox_watch_monitoring_system/main/installer/install_watcher.sh | sudo bash
+```
+
+**Lokale Installation (wenn Repository noch nicht auf GitHub):**
+
+Falls Sie das Repository lokal haben oder von einem anderen Git-Server klonen:
+
+```bash
+# Skript lokal ausführen
+sudo bash installer/install_watcher.sh
+```
+
+**Manuelle Installation:**
+
+```bash
+# 1. System aktualisieren
+sudo apt update && sudo apt upgrade -y
+
+# 2. Go installieren
+sudo apt install -y golang-go
+
+# 3. Repository klonen
+git clone https://github.com/tnt-nitro/prox_watch_monitoring_system.git
+cd prox_watch_monitoring_system
+
+# 4. Binary bauen
+go build -o prox-watch-watcher ./cmd/watcher
+# Oder mit Hardware-GPIO: go build -tags raspberry -o prox-watch-watcher ./cmd/watcher
+
+# 5. Installation (siehe installer/README_watcher_service.md)
+sudo ./installer/install_watcher.sh
+```
+
+**Konfiguration:**
+
+1. **Konfiguration bearbeiten:**
+   ```bash
+   sudo nano /etc/prox-watch-watcher/watcher.yaml
+   ```
+   **Wichtig:** Ersetzen Sie `PLACEHOLDER` durch echten Hostname/IP!
+
+2. **Service starten:**
+   ```bash
+   sudo systemctl start prox-watch-watcher.service
+   sudo systemctl enable prox-watch-watcher.service
+   ```
+
+3. **Status prüfen:**
+   ```bash
+   sudo systemctl status prox-watch-watcher.service
+   sudo journalctl -u prox-watch-watcher.service -f
+   ```
+
+Siehe [installer/README_watcher_service.md](installer/README_watcher_service.md) für detaillierte Installationsanleitung.
+
 ### Konfiguration
 
+**Core:**
 - **Config:** `/var/lib/prox-watch/config.yaml`
 - **State DB:** `/var/lib/prox-watch/state.db`
 - **Secrets:** `/var/lib/prox-watch/secrets.yaml`
+
+**Watcher:**
+- **Config:** `/etc/prox-watch-watcher/watcher.yaml`
+- **State DB:** `/var/lib/prox-watch-watcher/watcher_state.db`
+- **ARM-Datei:** `/var/lib/prox-watch-watcher/arm_powercycle` (Power-Cycle)
 
 Siehe [config/config.yaml.example](config/config.yaml.example) für Beispiel-Konfiguration.
 

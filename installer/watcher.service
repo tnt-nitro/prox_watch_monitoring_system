@@ -1,0 +1,73 @@
+[Unit]
+Description=Prox Watch External Watcher (Out-of-Band Monitoring)
+Documentation=https://github.com/tnt-nitro/prox_watch_monitoring_system
+After=network.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/prox-watch-watcher run --config-path /etc/prox-watch-watcher/watcher.yaml
+WorkingDirectory=/var/lib/prox-watch-watcher
+
+# User/Group (muss vorher erstellt werden: useradd -r -s /bin/false prox-watch-watcher)
+User=prox-watch-watcher
+Group=prox-watch-watcher
+
+# Restart-Verhalten: Nur bei Crash, nicht bei normalem Exit
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Security Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectKernelLogs=true
+
+# Schreibzugriff nur für State-DB und ARM-Datei
+ReadWritePaths=/var/lib/prox-watch-watcher
+ReadOnlyPaths=/etc/prox-watch-watcher
+
+# Capabilities: Minimal (keine besonderen Rechte)
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Netzwerk: Nur notwendige Protokolle
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+
+# GPIO-Zugriff (falls Hardware-GPIO aktiviert)
+# Option A: udev-Regel (empfohlen)
+# Option B: SupplementaryGroups=gpio (falls gpio-Gruppe existiert)
+# Option C: Root (nicht empfohlen, nur für Tests)
+# Aktuell: Keine GPIO-Gruppe, da periph.io normalerweise Root benötigt
+# Für Produktion: udev-Regel erstellen (siehe docs/24_powercycle_safety.md)
+
+# Ressourcen-Limits
+LimitNOFILE=1024
+LimitNPROC=64
+LimitCORE=0
+LimitFSIZE=1048576
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=prox-watch-watcher
+
+# Watchdog (optional, später)
+# WatchdogSec=30
+
+[Install]
+WantedBy=multi-user.target
