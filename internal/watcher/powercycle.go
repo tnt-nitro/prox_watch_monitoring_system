@@ -28,7 +28,7 @@ type PowerCycleConfig struct {
 	MinDowntimeSeconds int
 	RetryAfterSeconds  int
 	RequireManualArm   bool
-	ArmFilePath        string // Pfad zur ARM-Datei (z.B. /var/lib/prox-watch/arm_powercycle)
+	ArmFilePath        string // Pfad zur ARM-Datei (z.B. /var/lib/prox-watch-watcher/arm_powercycle)
 }
 
 // DefaultPowerCycleConfig gibt eine Standard-Power-Cycle-Konfiguration zurück.
@@ -42,7 +42,7 @@ func DefaultPowerCycleConfig() PowerCycleConfig {
 		MinDowntimeSeconds: 15,                      // Mindestens 15 Sekunden Downtime
 		RetryAfterSeconds:  900,                     // 15 Minuten Retry-Cooldown
 		RequireManualArm:   true,                     // ARM-Datei erforderlich
-		ArmFilePath:        "/var/lib/prox-watch/arm_powercycle",
+		ArmFilePath:        "/var/lib/prox-watch-watcher/arm_powercycle", // Muss innerhalb ReadWritePaths liegen
 	}
 }
 

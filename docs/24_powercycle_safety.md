@@ -20,7 +20,7 @@ Die Power-Cycle-Funktionalität ist durch mehrere Sicherheitsebenen geschützt:
 - **NICHT** nach Restart ohne echte Eskalation
 
 #### 🔒 ARM-Datei (Manuelle Freigabe)
-- Power-Cycle erfordert eine ARM-Datei (`/var/lib/prox-watch/arm_powercycle` per Default)
+- Power-Cycle erfordert eine ARM-Datei (`/var/lib/prox-watch-watcher/arm_powercycle` per Default)
 - Die Datei muss **manuell** erstellt werden, um einen Power-Cycle zu erlauben
 - Nach erfolgreichem Attempt wird die ARM-Datei **automatisch entfernt**
 - Bei Fehler bleibt die ARM-Datei erhalten (für Diagnose)
@@ -64,7 +64,7 @@ powercycle:
   min_downtime_seconds: 15
   retry_after_seconds: 900
   require_manual_arm: true
-  arm_file_path: "/var/lib/prox-watch/arm_powercycle"
+  arm_file_path: "/var/lib/prox-watch-watcher/arm_powercycle"  # Muss innerhalb ReadWritePaths liegen
 ```
 
 ### Konfigurationsparameter
@@ -79,7 +79,7 @@ powercycle:
 | `min_downtime_seconds` | int | `15` | Mindest-Downtime in Sekunden |
 | `retry_after_seconds` | int | `900` | Cooldown zwischen Versuchen (Sekunden) |
 | `require_manual_arm` | bool | `true` | Erfordert ARM-Datei |
-| `arm_file_path` | string | `/var/lib/prox-watch/arm_powercycle` | Pfad zur ARM-Datei |
+| `arm_file_path` | string | `/var/lib/prox-watch-watcher/arm_powercycle` | Pfad zur ARM-Datei (muss innerhalb ReadWritePaths liegen) |
 
 ### `relay_mode` (Pflicht!)
 
@@ -151,8 +151,9 @@ Um einen Power-Cycle zu erlauben, muss die ARM-Datei erstellt werden:
 
 ```bash
 # Als root oder mit sudo
-sudo touch /var/lib/prox-watch/arm_powercycle
-sudo chmod 600 /var/lib/prox-watch/arm_powercycle
+sudo touch /var/lib/prox-watch-watcher/arm_powercycle
+sudo chown prox-watch-watcher:prox-watch-watcher /var/lib/prox-watch-watcher/arm_powercycle
+sudo chmod 600 /var/lib/prox-watch-watcher/arm_powercycle
 ```
 
 **WICHTIG:**
@@ -164,7 +165,7 @@ sudo chmod 600 /var/lib/prox-watch/arm_powercycle
 
 ```bash
 # Als root oder mit sudo
-sudo rm /var/lib/prox-watch/arm_powercycle
+sudo rm /var/lib/prox-watch-watcher/arm_powercycle
 ```
 
 **WICHTIG:**
@@ -279,7 +280,7 @@ Bei Fehler bleibt die ARM-Datei erhalten. Prüfen Sie:
 
 ```bash
 # ARM-Datei entfernen
-sudo rm /var/lib/prox-watch/arm_powercycle
+sudo rm /var/lib/prox-watch-watcher/arm_powercycle
 ```
 
 ### Permanente Deaktivierung
