@@ -7,7 +7,7 @@ watcher:
 
 target:
   mode: "ping+https"        # ping | https | ping+https
-  host: "PLACEHOLDER"       # Lokal ersetzen (keine IP im Repo!)
+  host: "PLACEHOLDER"       # Lokal ersetzen (keine IP im Repo!) OHNE Portnummer (Port wird separat konfiguriert)
   port: 8006
   timeout_seconds: 5
 

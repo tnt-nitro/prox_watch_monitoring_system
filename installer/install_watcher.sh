@@ -107,7 +107,7 @@ watcher:
 
 target:
   mode: "ping+https"
-  host: "PLACEHOLDER"  # Ersetzen durch echten Hostname/IP!
+  host: "PLACEHOLDER"  # Ersetzen durch echten Hostname/IP! OHNE Portnummer (Port wird separat konfiguriert)
   port: 8006
   timeout_seconds: 5
 
@@ -138,7 +138,7 @@ powercycle:
   enabled: false
   gpio_pin: 24
   relay_active_high: false
-  relay_mode: ""  # Muss gesetzt werden, wenn enabled=true
+  relay_mode: ""  # MUSS gesetzt werden, wenn enabled=true! Werte: "cut_power_on_active" (NO-Relais) oder "cut_power_on_inactive" (NC-Relais). Siehe docs/24_powercycle_safety.md
   max_attempts: 1
   min_downtime_seconds: 15
   retry_after_seconds: 900
