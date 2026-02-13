@@ -144,7 +144,7 @@ func TestSQLiteStore_SetSeverity(t *testing.T) {
 	now := time.Now()
 	store.Increment("test.event.1", now)
 
-	if err := store.SetSeverity("test.event.1", rules.SeverityCrit); err != nil {
+	if err := store.SetSeverity("test.event.1", int(rules.SeverityCrit)); err != nil {
 		t.Fatalf("SetSeverity() error = %v", err)
 	}
 
@@ -153,8 +153,8 @@ func TestSQLiteStore_SetSeverity(t *testing.T) {
 		t.Fatalf("GetEvent() error = %v", err)
 	}
 
-	if event.Severity != rules.SeverityCrit {
-		t.Errorf("SetSeverity() severity = %v, want %v", event.Severity, rules.SeverityCrit)
+	if event.Severity != int(rules.SeverityCrit) {
+		t.Errorf("SetSeverity() severity = %v, want %v", event.Severity, int(rules.SeverityCrit))
 	}
 }
 

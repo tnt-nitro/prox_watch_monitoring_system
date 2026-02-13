@@ -27,7 +27,7 @@ func TestRunAck(t *testing.T) {
 	// Add test event
 	now := time.Now()
 	store.Increment("test.event.1", now)
-	store.SetSeverity("test.event.1", rules.SeverityCrit)
+	store.SetSeverity("test.event.1", int(rules.SeverityCrit))
 
 	// Create config file
 	configPath := tmpDir + "/config.yaml"

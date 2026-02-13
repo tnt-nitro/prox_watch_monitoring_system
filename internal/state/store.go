@@ -9,7 +9,6 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"prox-watch/internal/rules"
 )
 
 // Store is the interface for state management.
@@ -132,7 +131,7 @@ func (s *SQLiteStore) Increment(eventID string, ts time.Time) (CountState, error
 
 		_, err = tx.ExecContext(ctx,
 			"INSERT INTO events (event_id, severity, count, first_seen, last_seen) VALUES (?, ?, ?, ?, ?)",
-			eventID, int(rules.SeverityInfo), count, firstSeen, lastSeen)
+			eventID, 0, count, firstSeen, lastSeen) // 0 = SeverityInfo (to avoid import cycles)
 		if err != nil {
 			return CountState{}, fmt.Errorf("failed to insert event: %w", err)
 		}
@@ -211,7 +210,7 @@ func (s *SQLiteStore) GetEvent(eventID string) (*Event, error) {
 
 	return &Event{
 		EventID:   eventID,
-		Severity:  rules.Severity(severity),
+		Severity:  severity, // Stored as int to avoid import cycles
 		Count:     count,
 		FirstSeen: time.Unix(firstSeen, 0),
 		LastSeen:  time.Unix(lastSeen, 0),
@@ -219,12 +218,13 @@ func (s *SQLiteStore) GetEvent(eventID string) (*Event, error) {
 }
 
 // SetSeverity updates the severity for an event.
-func (s *SQLiteStore) SetSeverity(eventID string, severity rules.Severity) error {
+// Severity is passed as int to avoid import cycles.
+func (s *SQLiteStore) SetSeverity(eventID string, severity int) error {
 	ctx := context.Background()
 
 	_, err := s.db.ExecContext(ctx,
 		"UPDATE events SET severity = ? WHERE event_id = ?",
-		int(severity), eventID)
+		severity, eventID)
 	if err != nil {
 		return fmt.Errorf("failed to update severity: %w", err)
 	}
@@ -332,7 +332,7 @@ func (s *SQLiteStore) GetAllEvents() ([]*Event, error) {
 
 		events = append(events, &Event{
 			EventID:   eventID,
-			Severity:  rules.Severity(severity),
+			Severity:  severity, // Stored as int to avoid import cycles
 			Count:     count,
 			FirstSeen: time.Unix(firstSeen, 0),
 			LastSeen:  time.Unix(lastSeen, 0),

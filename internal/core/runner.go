@@ -134,8 +134,8 @@ func (r *Runner) ProcessEntry(ctx context.Context, entry journal.Entry) error {
 
 	// Step 4: Update severity in state store if changed
 	if severity != matchResult.Severity {
-		// Update severity in store
-		if err := r.store.SetSeverity(matchResult.EventID, severity); err != nil {
+		// Update severity in store (convert to int to avoid import cycles)
+		if err := r.store.SetSeverity(matchResult.EventID, int(severity)); err != nil {
 			// Log error but don't fail
 		}
 	}

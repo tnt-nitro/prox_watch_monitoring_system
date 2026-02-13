@@ -82,7 +82,9 @@ func RunStatusEvent(cfgPath string, eventID string) error {
 	// Display event information
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(w, "Event ID:\t%s\n", event.EventID)
-	fmt.Fprintf(w, "Severity:\t%s\n", event.Severity.String())
+	// Convert int severity to rules.Severity for display
+	severity := rules.Severity(event.Severity)
+	fmt.Fprintf(w, "Severity:\t%s\n", severity.String())
 	fmt.Fprintf(w, "Count:\t%d\n", event.Count)
 	fmt.Fprintf(w, "First Seen:\t%s\n", event.FirstSeen.Format(time.RFC3339))
 	fmt.Fprintf(w, "Last Seen:\t%s\n", event.LastSeen.Format(time.RFC3339))
