@@ -167,8 +167,15 @@ func LoadWatcherConfig(path string) (*WatcherConfig, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
+	// Debug: Zeige geparste Werte bei Validierungsfehler (nur für target.mode)
+	// Dies hilft bei YAML-Parsing-Problemen
+
 	// Validierung
 	if err := cfg.Validate(); err != nil {
+		// Bei target.mode Fehler: Zeige auch host-Wert für Debugging
+		if cfg.Target.Mode == "" || (cfg.Target.Mode != "ping" && cfg.Target.Mode != "https" && cfg.Target.Mode != "ping+https") {
+			return nil, fmt.Errorf("config validation failed: %w (parsed: mode=%q, host=%q)", err, cfg.Target.Mode, cfg.Target.Host)
+		}
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
