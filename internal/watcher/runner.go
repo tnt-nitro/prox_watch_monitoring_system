@@ -2,7 +2,7 @@ package watcher
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"prox-watch/internal/rules"
 	"time"
 )
@@ -128,8 +128,7 @@ func (r *runner) Run(ctx context.Context) error {
 			if err != nil {
 				// Health-Check-Fehler: Loggen und weiter mit nächstem Intervall
 				// Kein Stopp, kein Retry
-				// Verwende fmt.Printf für direkte Ausgabe (wird von systemd journal erfasst)
-				fmt.Printf("[%s] ✗ Health check ERROR: %v\n", time.Now().Format("15:04:05"), err)
+				log.Printf("[%s] ✗ Health check ERROR: %v", time.Now().Format("15:04:05"), err)
 				continue
 			}
 
@@ -149,10 +148,10 @@ func (r *runner) Run(ctx context.Context) error {
 				// Logge jeden erfolgreichen Check
 				if oldSeverity == rules.SeverityInfo {
 					// Normale erfolgreiche Checks
-					fmt.Printf("[%s] ✓ Health check OK - Status: INFO, Failures: 0\n", time.Now().Format("15:04:05"))
+					log.Printf("[%s] ✓ Health check OK - Status: INFO, Failures: 0", time.Now().Format("15:04:05"))
 				} else {
 					// Statuswechsel von Fehler zu Erfolg
-					fmt.Printf("[%s] ✓ Health check OK - Status recovered to INFO (failures: 0)\n", time.Now().Format("15:04:05"))
+					log.Printf("[%s] ✓ Health check OK - Status recovered to INFO (failures: 0)", time.Now().Format("15:04:05"))
 				}
 			} else {
 				// Fehler: Counter erhöhen
@@ -163,7 +162,7 @@ func (r *runner) Run(ctx context.Context) error {
 				failCountChanged = true
 				
 				// Logge jeden Fehler-Check
-				fmt.Printf("[%s] ✗ Health check FAILED - Failures: %d, Severity: %s\n", time.Now().Format("15:04:05"), failCount, newSeverity.String())
+				log.Printf("[%s] ✗ Health check FAILED - Failures: %d, Severity: %s", time.Now().Format("15:04:05"), failCount, newSeverity.String())
 			}
 
 			severityChanged = (newSeverity != r.state.CurrentSeverity)
