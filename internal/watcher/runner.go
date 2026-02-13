@@ -129,7 +129,7 @@ func (r *runner) Run(ctx context.Context) error {
 				// Health-Check-Fehler: Loggen und weiter mit nächstem Intervall
 				// Kein Stopp, kein Retry
 				// Verwende fmt.Printf für direkte Ausgabe (wird von systemd journal erfasst)
-				fmt.Printf("ERROR: Health check failed: %v\n", err)
+				fmt.Printf("[%s] ✗ Health check ERROR: %v\n", time.Now().Format("15:04:05"), err)
 				continue
 			}
 
@@ -146,9 +146,13 @@ func (r *runner) Run(ctx context.Context) error {
 				newSeverity = rules.SeverityInfo
 				failCountChanged = (oldFailCount != 0)
 				
-				// Logge Erfolg nur bei Statuswechsel (von Fehler zu Erfolg)
-				if oldSeverity != rules.SeverityInfo {
-					fmt.Printf("✓ Health check OK - Status recovered to INFO (failures: 0)\n")
+				// Logge jeden erfolgreichen Check
+				if oldSeverity == rules.SeverityInfo {
+					// Normale erfolgreiche Checks
+					fmt.Printf("[%s] ✓ Health check OK - Status: INFO, Failures: 0\n", time.Now().Format("15:04:05"))
+				} else {
+					// Statuswechsel von Fehler zu Erfolg
+					fmt.Printf("[%s] ✓ Health check OK - Status recovered to INFO (failures: 0)\n", time.Now().Format("15:04:05"))
 				}
 			} else {
 				// Fehler: Counter erhöhen
@@ -158,8 +162,8 @@ func (r *runner) Run(ctx context.Context) error {
 				newSeverity = EvaluateSeverity(failCount, r.warnThreshold, r.critThreshold)
 				failCountChanged = true
 				
-				// Logge Fehler immer
-				fmt.Printf("ERROR: Health check failed - Failures: %d, Severity: %s\n", failCount, newSeverity.String())
+				// Logge jeden Fehler-Check
+				fmt.Printf("[%s] ✗ Health check FAILED - Failures: %d, Severity: %s\n", time.Now().Format("15:04:05"), failCount, newSeverity.String())
 			}
 
 			severityChanged = (newSeverity != r.state.CurrentSeverity)
