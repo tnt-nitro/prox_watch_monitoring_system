@@ -3,17 +3,22 @@ package watcher
 import (
 	"errors"
 	"fmt"
+	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
 // WatcherConfig enthält die vollständige Konfiguration für den Watcher.
 // Phase 2: Erweitert um cooldown_seconds.
+// Phase 3: Erweitert um PowerCycleConfig.
 type WatcherConfig struct {
-	Watcher   WatcherSection   `yaml:"watcher"`
-	Target    TargetSection    `yaml:"target"`
+	Watcher    WatcherSection   `yaml:"watcher"`
+	Target     TargetSection    `yaml:"target"`
 	Thresholds ThresholdsSection `yaml:"thresholds"`
-	Push      PushSection      `yaml:"push"`
-	GPIO      GPIOConfig       `yaml:"gpio"`
-	Security  SecuritySection  `yaml:"security"`
+	Push       PushSection      `yaml:"push"`
+	GPIO       GPIOConfig       `yaml:"gpio"`
+	PowerCycle PowerCycleConfig `yaml:"powercycle"` // Phase 3: Power-Cycle-Konfiguration
+	Security   SecuritySection  `yaml:"security"`
 }
 
 // WatcherSection enthält Watcher-spezifische Einstellungen.
@@ -80,7 +85,8 @@ func DefaultWatcherConfig() WatcherConfig {
 				Crit: "prox-watch-crit",
 			},
 		},
-		GPIO: DefaultGPIOConfig(),
+		GPIO:       DefaultGPIOConfig(),
+		PowerCycle: DefaultPowerCycleConfig(), // Phase 3: Default Power-Cycle-Konfiguration
 		Security: SecuritySection{
 			BlockIPLiterals:         true,
 			RequireManualPowerCycle: true,
@@ -132,5 +138,39 @@ func (c WatcherConfig) Validate() error {
 		return fmt.Errorf("gpio validation failed: %w", err)
 	}
 
+	// Phase 3: Power-Cycle-Validierung
+	if err := c.PowerCycle.Validate(); err != nil {
+		return fmt.Errorf("powercycle validation failed: %w", err)
+	}
+
 	return nil
+}
+
+// LoadWatcherConfig lädt die Watcher-Konfiguration aus einer YAML-Datei.
+// Falls die Datei nicht existiert, wird eine Default-Konfiguration zurückgegeben.
+func LoadWatcherConfig(path string) (*WatcherConfig, error) {
+	// Start mit Defaults
+	cfg := DefaultWatcherConfig()
+
+	// Versuche Datei zu laden
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Datei existiert nicht → Defaults zurückgeben
+			return &cfg, nil
+		}
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	// YAML parsen
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	// Validierung
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
+	}
+
+	return &cfg, nil
 }

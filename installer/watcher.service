@@ -3,7 +3,6 @@ Description=Prox Watch External Watcher (Out-of-Band Monitoring)
 Documentation=https://github.com/tnt-nitro/prox_watch_monitoring_system
 After=network.target
 Wants=network-online.target
-StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -17,7 +16,7 @@ Group=prox-watch-watcher
 # Restart-Verhalten: Nur bei Crash, nicht bei normalem Exit
 Restart=on-failure
 RestartSec=5
-StartLimitIntervalSec=300
+StartLimitInterval=300
 StartLimitBurst=5
 
 # Security Hardening
