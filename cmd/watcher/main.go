@@ -63,12 +63,12 @@ func runCommand() {
 
 	// Validate configuration
 	if err := cfg.Validate(); err != nil {
-		log.Fatalf("Configuration validation failed: %v", err)
+		log.Fatalf("ERROR: Configuration validation failed: %v", err)
 	}
 
 	// Warn if host is still PLACEHOLDER
 	if cfg.Target.Host == "PLACEHOLDER" {
-		log.Printf("WARNING: target.host is still 'PLACEHOLDER'. Please update %s", configPath)
+		log.Fatalf("ERROR: target.host is still 'PLACEHOLDER'. Please update %s with your Proxmox hostname/IP", configPath)
 	}
 
 	// Initialize components
@@ -165,7 +165,12 @@ func runCommand() {
 	// Start runner in goroutine
 	errChan := make(chan error, 1)
 	go func() {
-		log.Printf("Starting watcher daemon (interval: %ds, target: %s:%d)", cfg.Watcher.IntervalSeconds, cfg.Target.Host, cfg.Target.Port)
+		log.Printf("✓ Watcher started successfully")
+		log.Printf("  Version: %s", version)
+		log.Printf("  Interval: %ds", cfg.Watcher.IntervalSeconds)
+		log.Printf("  Target: %s:%d (mode: %s)", cfg.Target.Host, cfg.Target.Port, cfg.Target.Mode)
+		log.Printf("  Thresholds: WARN=%d, CRIT=%d", cfg.Thresholds.Warn, cfg.Thresholds.Crit)
+		log.Printf("  Push notifications: %v", cfg.Push.Enabled)
 		if err := runner.Run(ctx); err != nil {
 			errChan <- err
 		}

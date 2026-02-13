@@ -113,7 +113,7 @@ func (c WatcherConfig) Validate() error {
 
 	// Target-Section
 	if c.Target.Mode != "ping" && c.Target.Mode != "https" && c.Target.Mode != "ping+https" {
-		return fmt.Errorf("target.mode must be one of: ping, https, ping+https, got %q", c.Target.Mode)
+		return fmt.Errorf("target.mode must be one of: ping, https, ping+https, got %q. Note: IP addresses belong in target.host, not target.mode", c.Target.Mode)
 	}
 	if c.Target.Port < 1 || c.Target.Port > 65535 {
 		return errors.New("target.port must be between 1 and 65535")

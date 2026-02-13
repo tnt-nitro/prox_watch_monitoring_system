@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"context"
+	"fmt"
 	"prox-watch/internal/rules"
 	"time"
 )
@@ -125,8 +126,10 @@ func (r *runner) Run(ctx context.Context) error {
 			// Health-Check ausführen
 			result, err := r.health.Check(ctx)
 			if err != nil {
-				// Health-Check-Fehler: Weiter mit nächstem Intervall
+				// Health-Check-Fehler: Loggen und weiter mit nächstem Intervall
 				// Kein Stopp, kein Retry
+				// Verwende fmt.Printf für direkte Ausgabe (wird von systemd journal erfasst)
+				fmt.Printf("ERROR: Health check failed: %v\n", err)
 				continue
 			}
 
@@ -137,10 +140,16 @@ func (r *runner) Run(ctx context.Context) error {
 			if result.Success {
 				// Erfolg: Counter zurücksetzen
 				oldFailCount := r.state.FailCount
+				oldSeverity := r.state.CurrentSeverity
 				r.counter.Reset()
 				r.state.FailCount = 0
 				newSeverity = rules.SeverityInfo
 				failCountChanged = (oldFailCount != 0)
+				
+				// Logge Erfolg nur bei Statuswechsel (von Fehler zu Erfolg)
+				if oldSeverity != rules.SeverityInfo {
+					fmt.Printf("✓ Health check OK - Status recovered to INFO (failures: 0)\n")
+				}
 			} else {
 				// Fehler: Counter erhöhen
 				r.counter.Increment()
@@ -148,6 +157,9 @@ func (r *runner) Run(ctx context.Context) error {
 				r.state.FailCount = failCount
 				newSeverity = EvaluateSeverity(failCount, r.warnThreshold, r.critThreshold)
 				failCountChanged = true
+				
+				// Logge Fehler immer
+				fmt.Printf("ERROR: Health check failed - Failures: %d, Severity: %s\n", failCount, newSeverity.String())
 			}
 
 			severityChanged = (newSeverity != r.state.CurrentSeverity)
