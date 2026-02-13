@@ -66,6 +66,10 @@ fi
 echo -e "${YELLOW}Binary wird gebaut...${NC}"
 cd "$INSTALL_DIR"
 
+# Abhängigkeiten auflösen
+echo -e "${YELLOW}Abhängigkeiten werden aufgelöst...${NC}"
+go mod tidy
+
 # Prüfe, ob Hardware-GPIO aktiviert werden soll
 BUILD_TAGS=""
 if [ "${ENABLE_GPIO:-}" = "1" ]; then
