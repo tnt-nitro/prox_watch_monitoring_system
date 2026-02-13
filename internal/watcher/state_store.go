@@ -84,8 +84,8 @@ CREATE TABLE IF NOT EXISTS watcher_state (
 	migration1 := `ALTER TABLE watcher_state ADD COLUMN power_attempts INTEGER NOT NULL DEFAULT 0;`
 	migration2 := `ALTER TABLE watcher_state ADD COLUMN last_power_attempt INTEGER NOT NULL DEFAULT 0;`
 	// Ignoriere Fehler (Spalten existieren bereits oder Tabelle existiert nicht)
-	_ = s.db.Exec(migration1)
-	_ = s.db.Exec(migration2)
+	_, _ = s.db.Exec(migration1)
+	_, _ = s.db.Exec(migration2)
 
 	return nil
 }

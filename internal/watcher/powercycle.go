@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
+
+	"prox-watch/internal/rules"
 )
 
 // PowerCycler ist das Interface für Power-Cycle-Operationen.
