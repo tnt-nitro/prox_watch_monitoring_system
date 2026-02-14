@@ -79,32 +79,26 @@ REPO_DIR="/tmp/prox-watch-install"
 REPO_URL="https://github.com/tnt-nitro/prox_watch_monitoring_system.git"
 BRANCH="feature/gpio-test-tool"
 
+# Altes Verzeichnis löschen (falls vorhanden und root gehört)
 if [ -d "$REPO_DIR" ]; then
-    echo -e "${YELLOW}Repository aktualisieren...${NC}"
-    cd "$REPO_DIR"
-    git fetch origin
-    # Prüfe, ob Branch existiert
-    if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
-        echo -e "${YELLOW}Branch $BRANCH wird ausgecheckt...${NC}"
-        git checkout "$BRANCH" 2>/dev/null || git checkout -b "$BRANCH" "origin/$BRANCH"
-        git pull origin "$BRANCH" || true
-    else
-        echo -e "${YELLOW}Branch $BRANCH nicht auf GitHub, verwende main...${NC}"
-        git checkout main || git checkout master
-        git pull origin main || git pull origin master || true
-    fi
-else
-    echo -e "${YELLOW}Repository klonen...${NC}"
+    echo -e "${YELLOW}Altes Repository-Verzeichnis wird entfernt...${NC}"
+    rm -rf "$REPO_DIR"
+fi
+
+# Repository klonen
+echo -e "${YELLOW}Repository klonen...${NC}"
+git clone -b "$BRANCH" "$REPO_URL" "$REPO_DIR" 2>&1 || {
+    echo -e "${YELLOW}Branch $BRANCH nicht gefunden, klone main und wechsle Branch...${NC}"
     git clone "$REPO_URL" "$REPO_DIR"
     cd "$REPO_DIR"
-    # Prüfe, ob Branch existiert
-    if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
-        echo -e "${YELLOW}Branch $BRANCH wird ausgecheckt...${NC}"
-        git checkout "$BRANCH"
-    else
-        echo -e "${YELLOW}Branch $BRANCH nicht auf GitHub, verwende main...${NC}"
-    fi
-fi
+    git checkout "$BRANCH" 2>/dev/null || {
+        echo -e "${RED}Fehler: Branch $BRANCH konnte nicht ausgecheckt werden${NC}"
+        exit 1
+    }
+}
+
+# Permissions korrigieren (falls als root erstellt)
+chown -R pi:pi "$REPO_DIR" 2>/dev/null || true
 
 # 4. Go-Bindings installieren
 echo -e "${YELLOW}=== Schritt 4: Go-Bindings installieren ===${NC}"
@@ -134,12 +128,21 @@ if [ ! -d "$REPO_DIR/cmd/ledtest" ]; then
     exit 1
 fi
 
-go build -tags raspberry -o prox-watch-ledtest ./cmd/ledtest
+# Als pi-User bauen (falls als root)
+if [ "$SUDO_USER" != "" ]; then
+    sudo -u "$SUDO_USER" -E go build -tags raspberry -o prox-watch-ledtest ./cmd/ledtest
+else
+    go build -tags raspberry -o prox-watch-ledtest ./cmd/ledtest
+fi
 
 if [ ! -f "$REPO_DIR/prox-watch-ledtest" ]; then
     echo -e "${RED}Fehler: Binary wurde nicht erstellt${NC}"
     echo -e "${YELLOW}Build-Fehler prüfen:${NC}"
-    go build -v -tags raspberry ./cmd/ledtest 2>&1 | tail -20
+    if [ "$SUDO_USER" != "" ]; then
+        sudo -u "$SUDO_USER" -E go build -v -tags raspberry ./cmd/ledtest 2>&1 | tail -20
+    else
+        go build -v -tags raspberry ./cmd/ledtest 2>&1 | tail -20
+    fi
     exit 1
 fi
 
