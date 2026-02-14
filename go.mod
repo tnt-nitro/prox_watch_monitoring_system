@@ -4,6 +4,8 @@ go 1.21
 
 require (
 	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/rpi-ws281x/rpi-ws281x-go v1.0.8
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/yaml.v3 v3.0.1
 )
 

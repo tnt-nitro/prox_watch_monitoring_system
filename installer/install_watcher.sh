@@ -30,6 +30,11 @@ fi
 
 echo -e "${GREEN}=== prox-watch-watcher Installation ===${NC}"
 
+# 0. System aktualisieren (Basissetup)
+echo -e "${YELLOW}System wird aktualisiert...${NC}"
+apt-get update
+apt-get upgrade -y
+
 # 1. Git installieren (falls nicht vorhanden)
 if ! command -v git &> /dev/null; then
     echo -e "${YELLOW}Git wird installiert...${NC}"
@@ -78,6 +83,22 @@ if [ "${ENABLE_GPIO:-}" = "1" ]; then
 fi
 
 go build $BUILD_TAGS -o prox-watch-watcher ./cmd/watcher
+
+# 4.1. LED-Test-Tool bauen (wenn GPIO aktiviert)
+if [ "${ENABLE_GPIO:-}" = "1" ]; then
+    echo -e "${YELLOW}LED-Test-Tool wird gebaut...${NC}"
+    # Prüfe, ob cmd/ledtest existiert (nur wenn Branch auf GitHub ist)
+    if [ -d "$INSTALL_DIR/cmd/ledtest" ]; then
+        go build $BUILD_TAGS -o prox-watch-ledtest ./cmd/ledtest
+        if [ -f prox-watch-ledtest ]; then
+            install -m 755 prox-watch-ledtest /usr/local/bin/prox-watch-ledtest
+            echo -e "${GREEN}LED-Test-Tool installiert${NC}"
+        fi
+    else
+        echo -e "${YELLOW}Hinweis: cmd/ledtest nicht gefunden (Branch feature/gpio-test-tool noch nicht auf GitHub)${NC}"
+        echo -e "${YELLOW}LED-Test-Tool wird übersprungen${NC}"
+    fi
+fi
 
 # 5. Binary installieren
 echo -e "${YELLOW}Binary wird installiert...${NC}"

@@ -32,6 +32,8 @@ func main() {
 		runCommand()
 	case "status":
 		statusCommand()
+	case "ledtest":
+		ledtestCommand()
 	case "version":
 		fmt.Printf("prox-watch-watcher %s\n", version)
 	default:
@@ -46,6 +48,7 @@ func printUsage() {
 	fmt.Println("Commands:")
 	fmt.Println("  run     - Start watcher daemon")
 	fmt.Println("  status  - Show current status")
+	fmt.Println("  ledtest - Start GPIO test tool (LED & Beeper)")
 	fmt.Println("  version - Show version")
 }
 
@@ -199,4 +202,21 @@ func statusCommand() {
 	// Should read state from SQLite and display current status
 	fmt.Println("Status command not yet implemented")
 	fmt.Println("Use 'journalctl -u prox-watch-watcher.service -f' to view logs")
+}
+
+func ledtestCommand() {
+	// Das LED-Test-Tool wird als separates Binary gebaut
+	// und sollte im Installationsskript installiert werden
+	// Für jetzt: Hinweis, dass das Tool separat gebaut werden muss
+	
+	fmt.Println("LED & Beeper Test Tool")
+	fmt.Println("")
+	fmt.Println("Hinweis: Dieses Tool muss separat gebaut werden:")
+	fmt.Println("  go build -tags raspberry -o prox-watch-ledtest ./cmd/ledtest")
+	fmt.Println("")
+	fmt.Println("Dann ausführen mit:")
+	fmt.Println("  sudo ./prox-watch-ledtest")
+	fmt.Println("")
+	fmt.Println("Oder direkt testen mit:")
+	fmt.Println("  go run -tags raspberry ./cmd/ledtest")
 }
